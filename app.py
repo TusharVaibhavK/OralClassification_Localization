@@ -11,6 +11,7 @@ import base64
 import pathlib
 from io import BytesIO
 import time
+import subprocess
 
 # Add paths for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -54,12 +55,14 @@ st.set_page_config(
 
 # Define model paths
 MODEL_PATHS = {
-    "UNet": "Unet/model.pth",
-    "AttentionNet": "AttentionNet/results/attention_model.pth",
-    "AttentionNet-Bresenham": "AttentionNet/attention_results_bresenham/attention_model.pth",
-    "DeepLabV3+": "DeepLabV3+/deep_model.pth",
-    "Transformer": "TransformerSegmentationNetwork/results/regular/model.pth",
-    "Transformer-Bresenham": "TransformerSegmentationNetwork/results/bresenham/model.pth"
+    "UNet": "Unet/results/regular/model.pth",
+    "UNet": "Unet/results/bresenham/model_bresenham_light.pth",
+    "AttentionNet": "AttentionNet/results/attention_regular/attention_model.pth",
+    "AttentionNet-Bresenham": "AttentionNet/attention_bresenham/attention_model.pth",
+    "DeepLabV3+": "DeepLabV3/results/deeplab_regular/deep_model.pth",
+    "DeepLabV3+": "DeepLabV3/results/deeplab_bresenham/deeplab_bresenham_model.pth",
+    "Transformer": "TransformerSegmentationNetwork/results/regular/reg_trans_model.pth",
+    "Transformer-Bresenham": "TransformerSegmentationNetwork/results/bresenham/oral_cancer_model.pth"
 }
 
 # Function to load models with caching
@@ -298,8 +301,50 @@ def main():
         special Bresenham variants that enhance boundary detection.
         """)
 
-    # Create two views: Single model and Compare models
-    tab1, tab2 = st.tabs(["Single Model", "Compare Models"])
+    # Add Analysis Tools section to sidebar
+    st.sidebar.title("Analysis Tools")
+    with st.sidebar.container():
+        st.write("Run comprehensive analysis across all models.")
+        if st.button("Run Model Analysis", key="run_analysis"):
+            with st.spinner("Running comprehensive model analysis. This may take several minutes..."):
+                try:
+                    # Get the current directory
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    analysis_script = os.path.join(
+                        current_dir, "model_analysis_all.py")
+
+                    # Run the analysis script as a subprocess
+                    process = subprocess.Popen([sys.executable, analysis_script],
+                                               stdout=subprocess.PIPE,
+                                               stderr=subprocess.PIPE,
+                                               text=True)
+
+                    # Get output and errors
+                    output, errors = process.communicate()
+
+                    # Check if the process completed successfully
+                    if process.returncode == 0:
+                        st.sidebar.success("Analysis completed successfully!")
+
+                        # Check if results JSON was generated
+                        analysis_data_path = os.path.join(
+                            current_dir, "analysis", "analysis_data.json")
+                        if os.path.exists(analysis_data_path):
+                            st.sidebar.info(
+                                "Analysis results are now available in the 'Model Analytics' tab.")
+                        else:
+                            st.sidebar.warning(
+                                "Analysis completed but no results data was found.")
+                    else:
+                        st.sidebar.error(
+                            f"Analysis failed with error: {errors}")
+                        st.sidebar.code(errors)
+                except Exception as e:
+                    st.sidebar.error(f"Error running analysis: {str(e)}")
+
+    # Create tabs for different views
+    tab1, tab2, tab3 = st.tabs(
+        ["Single Model", "Compare Models", "Model Analytics"])
 
     # Single model view
     with tab1:
@@ -597,6 +642,273 @@ def main():
                             if transformer_risk:
                                 st.write(
                                     f"Transformer risk assessment: **{transformer_risk}**")
+
+    # Analytics view
+    with tab3:
+        display_model_analytics()
+
+
+def display_model_analytics():
+    """Display comprehensive model analytics"""
+    st.header("Model Analytics Dashboard")
+
+    # Check if analysis data exists
+    analysis_dir = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), "analysis")
+    analysis_data_path = os.path.join(analysis_dir, "analysis_data.json")
+
+    if not os.path.exists(analysis_data_path):
+        st.info(
+            "No analytics data available. Run the model analysis from the sidebar to generate insights.")
+
+        # Show placeholder with example of what will be displayed
+        st.subheader("After analysis, you'll see:")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write("📊 Model Performance Metrics")
+        with col2:
+            st.write("📈 Comparative Analysis")
+        with col3:
+            st.write("🔍 Confusion Matrices")
+
+        return
+
+    # Load analysis data
+    with open(analysis_data_path, 'r') as f:
+        import json
+        analysis_data = json.load(f)
+
+    # Create high-level metrics
+    st.subheader("Model Performance Summary")
+
+    # Prepare data for metrics display
+    model_names = list(analysis_data.keys())
+    accuracies = [data.get('accuracy', 0) for data in analysis_data.values()]
+    aucs = [data.get('auc', 0) for data in analysis_data.values()]
+
+    # Get best performing model
+    if accuracies:
+        best_model_idx = accuracies.index(max(accuracies))
+        best_model = model_names[best_model_idx]
+        best_auc_idx = aucs.index(max(aucs))
+        best_auc_model = model_names[best_auc_idx]
+    else:
+        best_model = "N/A"
+        best_auc_model = "N/A"
+
+    # Display top metrics in columns
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Number of Models Analyzed", len(model_names))
+    with col2:
+        st.metric("Best Model (Accuracy)", best_model,
+                  f"{max(accuracies)*100:.2f}%" if accuracies else "N/A")
+    with col3:
+        st.metric("Best Model (AUC)", best_auc_model,
+                  f"{max(aucs)*100:.2f}%" if aucs else "N/A")
+
+    # Create tabs for different analytics views
+    metrics_tab, compare_tab, vis_tab = st.tabs(
+        ["Performance Metrics", "Comparative Analysis", "Visualizations"])
+
+    # Performance Metrics Tab
+    with metrics_tab:
+        st.subheader("Detailed Model Metrics")
+
+        # Create a dataframe with all metrics
+        metrics_data = []
+        for model_name, data in analysis_data.items():
+            metrics_data.append({
+                "Model": model_name,
+                "Accuracy": f"{data.get('accuracy', 0)*100:.2f}%",
+                "AUC": f"{data.get('auc', 0)*100:.2f}%",
+                "Sensitivity": f"{data.get('sensitivity', 0)*100:.2f}%",
+                "Specificity": f"{data.get('specificity', 0)*100:.2f}%",
+                "Precision": f"{data.get('precision', 0)*100:.2f}%",
+                "F1 Score": f"{data.get('f1_score', 0)*100:.2f}%"
+            })
+
+        # Display as table
+        import pandas as pd
+        metrics_df = pd.DataFrame(metrics_data)
+        st.dataframe(metrics_df, use_container_width=True)
+
+        # Add evaluation time comparison
+        st.subheader("Model Evaluation Time")
+        eval_times = [(model, data.get('eval_time', 0))
+                      for model, data in analysis_data.items()]
+        eval_times.sort(key=lambda x: x[1])
+
+        # Plot model evaluation times
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(10, 5))
+        models = [model for model, _ in eval_times]
+        times = [time for _, time in eval_times]
+        ax.barh(models, times, color='skyblue')
+        ax.set_xlabel('Time (seconds)')
+        ax.set_title('Model Evaluation Time Comparison')
+        st.pyplot(fig)
+
+    # Comparative Analysis Tab
+    with compare_tab:
+        st.subheader("Regular vs Bresenham Comparison")
+
+        # Group models by their base type (UNet, AttentionNet, etc.)
+        model_groups = {}
+        for model_name in model_names:
+            base_model = model_name.split(
+                "-")[0] if "-" in model_name else model_name
+            if base_model not in model_groups:
+                model_groups[base_model] = []
+            model_groups[base_model].append(model_name)
+
+        # Create comparison for each model type that has both regular and bresenham
+        for base_model, variants in model_groups.items():
+            if len(variants) < 2:
+                continue
+
+            # Find regular and bresenham variants
+            regular_model = next((m for m in variants if "Regular" in m), None)
+            bresenham_model = next(
+                (m for m in variants if "Bresenham" in m), None)
+
+            if not (regular_model and bresenham_model):
+                continue
+
+            st.write(f"### {base_model} Comparison")
+
+            # Calculate improvements
+            reg_data = analysis_data[regular_model]
+            bres_data = analysis_data[bresenham_model]
+
+            # Show metrics side by side
+            cols = st.columns(2)
+            with cols[0]:
+                st.write(f"**{regular_model}**")
+                st.write(f"Accuracy: {reg_data.get('accuracy', 0)*100:.2f}%")
+                st.write(f"AUC: {reg_data.get('auc', 0)*100:.2f}%")
+                st.write(
+                    f"Sensitivity: {reg_data.get('sensitivity', 0)*100:.2f}%")
+                st.write(
+                    f"Specificity: {reg_data.get('specificity', 0)*100:.2f}%")
+
+            with cols[1]:
+                st.write(f"**{bresenham_model}**")
+                st.write(f"Accuracy: {bres_data.get('accuracy', 0)*100:.2f}%")
+                st.write(f"AUC: {bres_data.get('auc', 0)*100:.2f}%")
+                st.write(
+                    f"Sensitivity: {bres_data.get('sensitivity', 0)*100:.2f}%")
+                st.write(
+                    f"Specificity: {bres_data.get('specificity', 0)*100:.2f}%")
+
+            # Calculate and display improvements
+            acc_change = (bres_data.get('accuracy', 0) -
+                          reg_data.get('accuracy', 0)) * 100
+            auc_change = (bres_data.get('auc', 0) -
+                          reg_data.get('auc', 0)) * 100
+            sens_change = (bres_data.get('sensitivity', 0) -
+                           reg_data.get('sensitivity', 0)) * 100
+            spec_change = (bres_data.get('specificity', 0) -
+                           reg_data.get('specificity', 0)) * 100
+
+            # Display improvement metrics with color coding
+            st.write("#### Improvements with Bresenham")
+            cols = st.columns(4)
+            with cols[0]:
+                delta_color = "normal" if abs(acc_change) < 0.1 else (
+                    "off" if acc_change < 0 else "inverse")
+                st.metric("Accuracy", f"{bres_data.get('accuracy', 0)*100:.2f}%",
+                          f"{acc_change:+.2f}%", delta_color=delta_color)
+            with cols[1]:
+                delta_color = "normal" if abs(auc_change) < 0.1 else (
+                    "off" if auc_change < 0 else "inverse")
+                st.metric("AUC", f"{bres_data.get('auc', 0)*100:.2f}%",
+                          f"{auc_change:+.2f}%", delta_color=delta_color)
+            with cols[2]:
+                delta_color = "normal" if abs(sens_change) < 0.1 else (
+                    "off" if sens_change < 0 else "inverse")
+                st.metric("Sensitivity", f"{bres_data.get('sensitivity', 0)*100:.2f}%",
+                          f"{sens_change:+.2f}%", delta_color=delta_color)
+            with cols[3]:
+                delta_color = "normal" if abs(spec_change) < 0.1 else (
+                    "off" if spec_change < 0 else "inverse")
+                st.metric("Specificity", f"{bres_data.get('specificity', 0)*100:.2f}%",
+                          f"{spec_change:+.2f}%", delta_color=delta_color)
+
+            # Display confusion matrix comparison if available
+            if 'confusion_matrix_values' in reg_data and 'confusion_matrix_values' in bres_data:
+                st.write("#### Confusion Matrix Comparison")
+                cols = st.columns(2)
+
+                # Plot regular confusion matrix
+                with cols[0]:
+                    st.write(f"**{regular_model}**")
+                    reg_cm = reg_data['confusion_matrix_values']
+                    fig, ax = plt.subplots(figsize=(5, 4))
+                    import seaborn as sns
+                    import numpy as np
+                    sns.heatmap(np.array(reg_cm), annot=True, fmt='d', cmap='Blues',
+                                xticklabels=["Benign", "Malignant"],
+                                yticklabels=["Benign", "Malignant"], ax=ax)
+                    plt.xlabel("Predicted")
+                    plt.ylabel("True")
+                    plt.tight_layout()
+                    st.pyplot(fig)
+
+                # Plot bresenham confusion matrix
+                with cols[1]:
+                    st.write(f"**{bresenham_model}**")
+                    bres_cm = bres_data['confusion_matrix_values']
+                    fig, ax = plt.subplots(figsize=(5, 4))
+                    sns.heatmap(np.array(bres_cm), annot=True, fmt='d', cmap='Blues',
+                                xticklabels=["Benign", "Malignant"],
+                                yticklabels=["Benign", "Malignant"], ax=ax)
+                    plt.xlabel("Predicted")
+                    plt.ylabel("True")
+                    plt.tight_layout()
+                    st.pyplot(fig)
+
+            st.markdown("---")
+
+    # Visualizations Tab
+    with vis_tab:
+        st.subheader("Performance Visualizations")
+
+        # Display saved visualizations
+        for model_name, data in analysis_data.items():
+            if 'visualization_paths' in data:
+                st.write(f"### {model_name}")
+
+                # Create columns for each visualization
+                cols = st.columns(3)
+                paths = data['visualization_paths']
+
+                # Check if files exist and display
+                if os.path.exists(paths.get('confusion_matrix', '')):
+                    with cols[0]:
+                        st.write("**Confusion Matrix**")
+                        st.image(paths['confusion_matrix'])
+
+                if os.path.exists(paths.get('roc_curve', '')):
+                    with cols[1]:
+                        st.write("**ROC Curve**")
+                        st.image(paths['roc_curve'])
+
+                if os.path.exists(paths.get('metrics', '')):
+                    with cols[2]:
+                        st.write("**Metrics Summary**")
+                        st.image(paths['metrics'])
+
+                st.markdown("---")
+
+        # Show Bresenham examples if available
+        bresenham_examples_path = os.path.join(
+            analysis_dir, "bresenham_examples.png")
+        if os.path.exists(bresenham_examples_path):
+            st.subheader("Bresenham Algorithm Visualization")
+            st.write(
+                "The Bresenham algorithm enhances tumor boundaries for better detection:")
+            st.image(bresenham_examples_path)
 
 
 if __name__ == "__main__":

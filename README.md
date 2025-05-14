@@ -4,7 +4,7 @@ An AI-powered system for classifying oral lesions as benign or malignant using d
 
 ## 🧠 Models Overview
 
-This project implements four powerful deep learning models for oral cancer classification:
+This project implements five powerful deep learning models for oral cancer classification:
 
 ### 1. UNet Model 🌐
 
@@ -56,6 +56,22 @@ A cutting-edge model leveraging transformer-based architectures:
 - **Implementation**: transformer.py
 - **Demo Application**: transformer_app.py
 - **Training Script**: transformer_train.py
+
+### 5. Bresenham Algorithm for Lesion Boundary Tracing 📏
+
+The Bresenham algorithm has been implemented for precise lesion boundary tracing:
+
+- **Purpose**: Efficiently trace and analyze boundaries of oral lesions
+- **Key Features**:
+  - Fast integer-based line drawing algorithm for boundary delineation
+  - Enhanced contour extraction for irregular lesion shapes
+  - Integration with segmentation models for ROI refinement
+  - Pixel-perfect boundary analysis without floating-point operations
+- **Implementation**: utils/bresenham.py
+- **Usage Examples**: 
+  - ROI refinement in segmentation tasks
+  - Feature extraction from lesion boundaries
+  - Contour analysis for malignancy indicators
 
 ## 🚀 Project Setup
 
@@ -179,6 +195,9 @@ python -m AttentionNet.visualize_attention --image_dir your_image_directory --nu
 │   ├── app.py                  # Streamlit web application
 │   ├── model_analysis.py       # Script for analyzing model performance
 │   └── Unet.py                 # UNet model architecture and training
+├── utils/                      # Utility functions and algorithms
+│   ├── bresenham.py            # Bresenham line algorithm implementation
+│   └── image_processing.py     # Common image processing utilities
 ├── .gitignore                  # Git ignore file
 ├── model.pth                   # Placeholder for model weights
 └── README.md                   # Project documentation

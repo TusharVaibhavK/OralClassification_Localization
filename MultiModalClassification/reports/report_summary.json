@@ -1,0 +1,24 @@
+{
+    "models_compared": [
+        "AttentionNet"
+    ],
+    "metrics_included": [
+        "accuracy",
+        "auc"
+    ],
+    "best_model": {
+        "accuracy": "AttentionNet",
+        "auc": "AttentionNet",
+        "sensitivity": null,
+        "specificity": null
+    },
+    "report_files": [
+        "metrics_comparison.csv",
+        "accuracy_comparison.png",
+        "auc_comparison.png",
+        "sensitivity_comparison.png",
+        "specificity_comparison.png",
+        "roc_comparison.png",
+        "confusion_matrices.png"
+    ]
+}

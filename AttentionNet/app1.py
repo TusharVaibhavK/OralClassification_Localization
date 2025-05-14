@@ -161,8 +161,8 @@ def main():
     # Model selection
     model_path = st.sidebar.selectbox(
         "Select Model",
-        options=["results/attention_model.pth",
-                 "attention_results_bresenham/attention_model.pth"],
+        options=["results/attention_regular/attention_results_regular/attention_model.pth",
+                 "results/attention_bresenham/attention_results_bresenham/attention_model.pth"],
         index=0
     )
 

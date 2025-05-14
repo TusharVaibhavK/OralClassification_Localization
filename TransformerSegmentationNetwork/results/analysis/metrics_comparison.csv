@@ -1,0 +1,12 @@
+Metric,Regular_Model,Bresenham_Model,Absolute_Change,Percent_Change
+accuracy,0.8350,0.8700,0.0350,4.19
+sensitivity,0.8120,0.8540,0.0420,5.17
+specificity,0.8580,0.8860,0.0280,3.26
+precision,0.8030,0.8350,0.0320,3.99
+f1_score,0.8230,0.8610,0.0380,4.62
+auc,0.8900,0.9200,0.0300,3.37
+fp_count,22,14,8,36.36
+fn_count,25,18,7,28.00
+false_positive_confidence,0.7200,0.7500,0.0300,4.17
+false_negative_confidence,0.6800,0.7100,0.0300,4.41
+inference_time,85.3000,82.1000,-3.2000,-3.75
