@@ -1,14 +1,9 @@
 {
-    "models_compared": [
-        "AttentionNet"
-    ],
-    "metrics_included": [
-        "accuracy",
-        "auc"
-    ],
+    "models_compared": [],
+    "metrics_included": [],
     "best_model": {
-        "accuracy": "AttentionNet",
-        "auc": "AttentionNet",
+        "accuracy": null,
+        "auc": null,
         "sensitivity": null,
         "specificity": null
     },

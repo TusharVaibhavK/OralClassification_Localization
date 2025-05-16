@@ -391,7 +391,7 @@ if uploaded_file is not None:
 
             with col1:
                 st.image(image, caption="Uploaded Image",
-                         use_column_width=True)
+                         use_container_width=True)
 
             with col2:
                 # Use the first available model for basic analysis
@@ -431,7 +431,7 @@ if uploaded_file is not None:
 
             with col1:
                 st.write("Original Image")
-                st.image(image, use_column_width=True)
+                st.image(image, use_container_width=True)
 
             with col2:
                 st.write("Bresenham Circle & Cross")
@@ -447,7 +447,7 @@ if uploaded_file is not None:
                     "Select Visualization Color", list(color_options.keys()))
                 bresenham_img = visualize_tumor(
                     image.copy(), color=color_options[selected_color])
-                st.image(bresenham_img, use_column_width=True)
+                st.image(bresenham_img, use_container_width=True)
 
             st.write("### How Bresenham Helps in Analysis")
             st.markdown("""
@@ -558,14 +558,14 @@ if uploaded_file is not None:
 
             with col1:
                 st.write("Original Image")
-                st.image(image, use_column_width=True)
+                st.image(image, use_container_width=True)
 
             with col2:
                 st.write("Encoder Features")
                 if hasattr(model, 'last_encoder_features') and model.last_encoder_features is not None:
                     encoder_viz = visualize_features(
                         model.last_encoder_features, "Encoder Feature Map")
-                    st.image(encoder_viz, use_column_width=True)
+                    st.image(encoder_viz, use_container_width=True)
                 else:
                     st.write("Feature maps not available")
 
@@ -574,7 +574,7 @@ if uploaded_file is not None:
                 if hasattr(model, 'last_decoder_features') and model.last_decoder_features is not None:
                     decoder_viz = visualize_features(
                         model.last_decoder_features, "Decoder Feature Map")
-                    st.image(decoder_viz, use_column_width=True)
+                    st.image(decoder_viz, use_container_width=True)
                 else:
                     st.write("Feature maps not available")
 
@@ -589,7 +589,7 @@ if uploaded_file is not None:
                     st.write("Heatmap shows regions the model focuses on")
                     heatmap_overlay = create_heatmap_overlay(
                         image, model.last_decoder_features, alpha=heatmap_alpha)
-                    st.image(heatmap_overlay, use_column_width=True)
+                    st.image(heatmap_overlay, use_container_width=True)
 
             with col2:
                 st.write("Combined Bresenham + Heatmap")
@@ -600,7 +600,7 @@ if uploaded_file is not None:
                     # Add heatmap on top of Bresenham
                     combined_img = create_heatmap_overlay(
                         bresenham_img, model.last_decoder_features, alpha=0.4)
-                    st.image(combined_img, use_column_width=True)
+                    st.image(combined_img, use_container_width=True)
 
                     # Display prediction again for convenience
                     prediction = results[selected_model]["prediction"]
